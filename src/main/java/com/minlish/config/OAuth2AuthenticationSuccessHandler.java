@@ -29,40 +29,44 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Value("${ui.url:http://localhost:2910}")
+    @Value("${ui.url:https://minlish.site}")
     private String uiUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
-        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        String email = asString(oauth2User.getAttributes().get("email"));
-        String fullName = asString(oauth2User.getAttributes().get("name"));
+        try {
+            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            String email = asString(oauth2User.getAttributes().get("email"));
+            String fullName = asString(oauth2User.getAttributes().get("name"));
 
-        if (email == null || email.isBlank()) {
+            if (email == null || email.isBlank()) {
+                response.sendRedirect(uiUrl + "/auth#error=google_login_failed");
+                return;
+            }
+
+            User user = userService.findOrCreateGoogleUser(email, fullName);
+            UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
+
+            Authentication jwtAuth = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities());
+
+            String jwt = jwtTokenProvider.generateToken(jwtAuth);
+
+            String redirectUrl = UriComponentsBuilder
+                    .fromHttpUrl(uiUrl)
+                    .path("/auth")
+                    .fragment(buildAuthFragment(jwt, user.getId(), user.getEmail()))
+                    .build(true)
+                    .toUriString();
+
+            response.sendRedirect(redirectUrl);
+        } catch (Exception exception) {
             response.sendRedirect(uiUrl + "/auth#error=google_login_failed");
-            return;
         }
-
-        User user = userService.findOrCreateGoogleUser(email, fullName);
-        UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
-
-        Authentication jwtAuth = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                null,
-                userDetails.getAuthorities());
-
-        String jwt = jwtTokenProvider.generateToken(jwtAuth);
-
-        String redirectUrl = UriComponentsBuilder
-                .fromHttpUrl(uiUrl)
-                .path("/auth")
-                .fragment(buildAuthFragment(jwt, user.getId(), user.getEmail()))
-                .build(true)
-                .toUriString();
-
-        response.sendRedirect(redirectUrl);
     }
 
     private String buildAuthFragment(String accessToken, Long userId, String email) {
