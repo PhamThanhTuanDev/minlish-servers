@@ -1,6 +1,7 @@
 package com.minlish.config;
 
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.cache.CacheManager;
@@ -9,6 +10,8 @@ import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.TimeZone;
 
 /**
  * Created by: IntelliJ IDEA
@@ -21,6 +24,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableAsync
 @EnableCaching
 public class AppConfig {
+
+    @PostConstruct
+    public void initTimezone() {
+        // Keep application timestamps and scheduler logic aligned with Vietnam time.
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+    }
 
     /**
      * Mã hóa mật khẩu dùng BCrypt
