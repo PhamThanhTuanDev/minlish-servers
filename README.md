@@ -401,3 +401,17 @@ Backend đã mở CORS cho môi trường local dev.
 3. Giảm log debug (`logging.level.com.minlish=INFO` hoặc thấp hơn).
 4. Rà lại allowed origins theo domain thực tế.
 5. Kiểm tra SMTP account dùng cho production.
+
+## 15) Deploy miễn phí
+
+Nếu bạn muốn lên tên miền thật mà không tốn thêm phí, xem:
+
+- [docs/DEPLOY_FREE_ORACLE_AND_CPANEL.md](docs/DEPLOY_FREE_ORACLE_AND_CPANEL.md)
+- [docs/DEPLOY_RENDER_WITH_CPANEL_DB.md](docs/DEPLOY_RENDER_WITH_CPANEL_DB.md)
+
+Tài liệu này đi theo phương án:
+
+- Frontend trên cPanel cho `minlish.site`
+- Backend Java + MySQL trên Oracle Free Tier cho `api.minlish.site`
+
+Nếu không có thẻ để đăng ký Oracle, dùng phương án Render + MySQL cPanel ở tài liệu thứ hai.
