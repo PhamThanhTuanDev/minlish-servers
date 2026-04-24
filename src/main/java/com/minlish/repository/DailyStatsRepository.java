@@ -37,4 +37,13 @@ public interface DailyStatsRepository extends JpaRepository<DailyStats, Long> {
 
     @Query("SELECT COALESCE(SUM(d.reviewTotalCount), 0) FROM DailyStats d WHERE d.user = :user")
     long sumReviewTotalCountByUser(@Param("user") User user);
+
+    @Query("SELECT d.studyDate FROM DailyStats d " +
+            "WHERE d.user = :user " +
+            "AND d.studyDate BETWEEN :start AND :end " +
+            "AND COALESCE(d.studySessions, 0) > 0 " +
+            "ORDER BY d.studyDate DESC")
+    List<LocalDate> findStudyDatesWithSessions(@Param("user") User user,
+                                               @Param("start") LocalDate start,
+                                               @Param("end") LocalDate end);
 }

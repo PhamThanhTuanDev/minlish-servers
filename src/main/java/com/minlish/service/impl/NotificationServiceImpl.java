@@ -30,7 +30,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -189,48 +191,56 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Scheduled(cron = "0 */1 * * * ?")
     public void sendDailyRemindersSmartly() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate();
-        LocalTime currentTime = now.toLocalTime();
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate today = now.toLocalDate();
+            LocalTime currentTime = now.toLocalTime();
 
-        int page = 0;
-        Page<User> batch;
-        do {
-            batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
-            for (User user : batch.getContent()) {
-                NotificationPreferences prefs = preferencesRepository.findByUser(user)
-                        .orElse(null);
+            int page = 0;
+            Page<User> batch;
+            do {
+                batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
+                for (User user : batch.getContent()) {
+                    try {
+                        NotificationPreferences prefs = preferencesRepository.findByUser(user)
+                                .orElse(null);
 
-                if (prefs == null || !prefs.getEnableDailyReminder()) {
-                    continue;
+                        if (prefs == null || !prefs.getEnableDailyReminder()) {
+                            continue;
+                        }
+
+                        LocalTime reminderTime = prefs.getReminderTime() != null ? prefs.getReminderTime() : LocalTime.of(8, 0);
+                        if (!isTimeInWindow(currentTime, reminderTime)) {
+                            continue;
+                        }
+
+                        LocalDateTime start = today.atStartOfDay();
+                        LocalDateTime end = today.plusDays(1).atStartOfDay();
+                        if (notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
+                                user, TYPE_DAILY_REMINDER, start, end)) {
+                            continue;
+                        }
+
+                        createTypedNotification(user, TYPE_DAILY_REMINDER, "Nhắc học mỗi ngày",
+                            "Dành vài phút với MinLish để giữ nhịp học nhé!");
+
+                        if (Boolean.TRUE.equals(prefs.getEnableEmailNotification())) {
+                            String subject = "MinLish | Đến giờ học rồi";
+                            String body = "Chào bạn,\n\n"
+                                + "Đây là nhắc học hằng ngày của bạn.\n"
+                                    + "Dành vài phút với MinLish để giữ nhịp học nhé.\n\n"
+                                    + "Mở ứng dụng để ôn tập ngay.";
+                            sendEmailQuietly(user.getEmail(), subject, body);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Skip daily reminder for user {} due to error: {}", user.getId(), e.getMessage());
+                    }
                 }
-
-                LocalTime reminderTime = prefs.getReminderTime() != null ? prefs.getReminderTime() : LocalTime.of(8, 0);
-                if (!isTimeInWindow(currentTime, reminderTime)) {
-                    continue;
-                }
-
-                LocalDateTime start = today.atStartOfDay();
-                LocalDateTime end = today.plusDays(1).atStartOfDay();
-                if (notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
-                        user, TYPE_DAILY_REMINDER, start, end)) {
-                    continue;
-                }
-
-                createTypedNotification(user, TYPE_DAILY_REMINDER, "Nhắc học mỗi ngày",
-                    "Dành vài phút với MinLish để giữ nhịp học nhé!");
-
-                if (Boolean.TRUE.equals(prefs.getEnableEmailNotification())) {
-                    String subject = "MinLish | Đến giờ học rồi";
-                    String body = "Chào bạn,\n\n"
-                        + "Đây là nhắc học hằng ngày của bạn.\n"
-                            + "Dành vài phút với MinLish để giữ nhịp học nhé.\n\n"
-                            + "Mở ứng dụng để ôn tập ngay.";
-                    sendEmailQuietly(user.getEmail(), subject, body);
-                }
-            }
-            page++;
-        } while (batch.hasNext());
+                page++;
+            } while (batch.hasNext());
+        } catch (Exception e) {
+            log.error("sendDailyRemindersSmartly failed: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -240,30 +250,37 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Scheduled(cron = "0 */1 * * * ?")
     public void sendUpcomingReviewRemindersSmartly() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate();
-        LocalTime currentTime = now.toLocalTime();
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalTime currentTime = now.toLocalTime();
 
-        int page = 0;
-        Page<User> batch;
-        do {
-            batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
-            for (User user : batch.getContent()) {
-                NotificationPreferences prefs = preferencesRepository.findByUser(user)
-                        .orElse(null);
+            int page = 0;
+            Page<User> batch;
+            do {
+                batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
+                for (User user : batch.getContent()) {
+                    try {
+                        NotificationPreferences prefs = preferencesRepository.findByUser(user)
+                                .orElse(null);
 
-                if (prefs == null || !prefs.getEnableReviewReminder()) {
-                    continue;
+                        if (prefs == null || !prefs.getEnableReviewReminder()) {
+                            continue;
+                        }
+
+                        LocalTime reminderTime = prefs.getReminderTime() != null ? prefs.getReminderTime() : LocalTime.of(8, 0);
+                        if (!isTimeInWindow(currentTime, reminderTime)) {
+                            continue;
+                        }
+                        ensureTodayReviewDueNotification(user, true);
+                    } catch (Exception e) {
+                        log.warn("Skip review reminder for user {} due to error: {}", user.getId(), e.getMessage());
+                    }
                 }
-
-                LocalTime reminderTime = prefs.getReminderTime() != null ? prefs.getReminderTime() : LocalTime.of(8, 0);
-                if (!isTimeInWindow(currentTime, reminderTime)) {
-                    continue;
-                }
-                ensureTodayReviewDueNotification(user, true);
-            }
-            page++;
-        } while (batch.hasNext());
+                page++;
+            } while (batch.hasNext());
+        } catch (Exception e) {
+            log.error("sendUpcomingReviewRemindersSmartly failed: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -274,44 +291,52 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Scheduled(cron = "0 */1 * * * ?")
     public void sendAchievementsAndMilestones() {
-        LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
 
-        int page = 0;
-        Page<User> batch;
-        do {
-            batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
-            for (User user : batch.getContent()) {
-                int newWordsGoal = resolveNewWordsGoal(user);
-                DailyStats todayStats = dailyStatsRepository.findByUserAndStudyDate(user, today).orElse(null);
-                int wordsToday = todayStats != null && todayStats.getNewWordsLearned() != null
-                    ? todayStats.getNewWordsLearned()
-                    : 0;
+            int page = 0;
+            Page<User> batch;
+            do {
+                batch = userRepository.findAll(PageRequest.of(page, 200, Sort.by("id")));
+                for (User user : batch.getContent()) {
+                    try {
+                        int newWordsGoal = resolveNewWordsGoal(user);
+                        DailyStats todayStats = dailyStatsRepository.findByUserAndStudyDate(user, today).orElse(null);
+                        int wordsToday = todayStats != null && todayStats.getNewWordsLearned() != null
+                            ? todayStats.getNewWordsLearned()
+                            : 0;
 
-                if (newWordsGoal > 0 && wordsToday >= newWordsGoal
-                    && !notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
-                        user, TYPE_ACHIEVEMENT, startOfDay, endOfDay)) {
-                    createTypedNotification(
-                            user,
-                            TYPE_ACHIEVEMENT,
-                            "Hoàn thành mục tiêu học ngày hôm nay",
-                        "Bạn đã hoàn thành " + wordsToday + "/" + newWordsGoal + " từ mới hôm nay! Tuyệt vời!");
+                        if (newWordsGoal > 0 && wordsToday >= newWordsGoal
+                            && !notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
+                                user, TYPE_ACHIEVEMENT, startOfDay, endOfDay)) {
+                            createTypedNotification(
+                                    user,
+                                    TYPE_ACHIEVEMENT,
+                                    "Hoàn thành mục tiêu học ngày hôm nay",
+                                "Bạn đã hoàn thành " + wordsToday + "/" + newWordsGoal + " từ mới hôm nay! Tuyệt vời!");
+                        }
+
+                        int streak = calculateStreak(user);
+                        if (streak >= 3 && streak % 3 == 0
+                                && !notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
+                                        user, TYPE_MILESTONE, startOfDay, endOfDay)) {
+                            createTypedNotification(
+                                    user,
+                                    TYPE_MILESTONE,
+                                    "Chuỗi ngày học liên tiếp",
+                                    "Chúc mừng! Bạn đã đạt " + streak + " ngày học liên tiếp");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Skip achievement/milestone for user {} due to error: {}", user.getId(), e.getMessage());
+                    }
                 }
-
-                int streak = calculateStreak(user);
-                if (streak >= 3 && streak % 3 == 0
-                        && !notificationRepository.existsByUserAndNotificationTypeAndCreatedAtBetween(
-                                user, TYPE_MILESTONE, startOfDay, endOfDay)) {
-                    createTypedNotification(
-                            user,
-                            TYPE_MILESTONE,
-                            "Chuỗi ngày học liên tiếp",
-                            "Chúc mừng! Bạn đã đạt " + streak + " ngày học liên tiếp");
-                }
-            }
-            page++;
-        } while (batch.hasNext());
+                page++;
+            } while (batch.hasNext());
+        } catch (Exception e) {
+            log.error("sendAchievementsAndMilestones failed: {}", e.getMessage(), e);
+        }
     }
 
     private int resolveNewWordsGoal(User user) {
@@ -323,35 +348,22 @@ public class NotificationServiceImpl implements NotificationService {
 
     private int calculateStreak(User user) {
         LocalDate today = LocalDate.now();
-        LocalDate recent = findMostRecentSessionDate(user, today);
-        if (recent == null) {
+        LocalDate start = today.minusDays(365);
+        List<LocalDate> studyDates = dailyStatsRepository.findStudyDatesWithSessions(user, start, today);
+        if (studyDates.isEmpty()) {
             return 0;
         }
 
+        Set<LocalDate> studyDateSet = new HashSet<>(studyDates);
+        LocalDate recent = studyDates.get(0);
         int streak = 0;
         LocalDate cursor = recent;
         int limit = 365;
-        while (limit-- > 0 && hasSessionOnDate(user, cursor)) {
+        while (limit-- > 0 && studyDateSet.contains(cursor)) {
             streak++;
             cursor = cursor.minusDays(1);
         }
         return streak;
-    }
-
-    private LocalDate findMostRecentSessionDate(User user, LocalDate start) {
-        LocalDate cursor = start;
-        int limit = 365;
-        while (limit-- > 0) {
-            if (hasSessionOnDate(user, cursor)) {
-                return cursor;
-            }
-            cursor = cursor.minusDays(1);
-        }
-        return null;
-    }
-
-    private boolean hasSessionOnDate(User user, LocalDate date) {
-        return notificationRepository.countSessionSummaryByUserAndDate(user.getId(), "SESSION_SUMMARY", date) > 0;
     }
 
     private void sendReviewDueEmail(User user, int dueCount) {
