@@ -53,6 +53,10 @@ public class Vocabulary {
 
     private String notes;
 
+    private String type;
+
+    private String level;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

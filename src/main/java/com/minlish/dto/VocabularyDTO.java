@@ -23,4 +23,6 @@ public class VocabularyDTO {
     private String fixedPhrase;
     private String relatedWords;
     private String notes;
+    private String type;
+    private String level;
 }

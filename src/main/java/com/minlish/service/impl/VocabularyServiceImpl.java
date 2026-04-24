@@ -45,6 +45,8 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
+        vocab.setType(dto.getType());
+        vocab.setLevel(dto.getLevel());
         return vocabularyRepository.save(vocab);
     }
 
@@ -69,6 +71,8 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
+        vocab.setType(dto.getType());
+        vocab.setLevel(dto.getLevel());
         return vocabularyRepository.save(vocab);
     }
 
@@ -113,7 +117,7 @@ public class VocabularyServiceImpl implements VocabularyService {
 
             StringBuilder csv = new StringBuilder();
             csv.append('\uFEFF');
-            csv.append("word,pronunciation,meaning,description,example_sentence,fixed_phrase,related_words,notes\n");
+            csv.append("word,pronunciation,meaning,description,example_sentence,fixed_phrase,related_words,notes,type,level\n");
             for (Vocabulary v : words) {
                 csv.append(escapeCsv(v.getWord())).append(',')
                         .append(escapeCsv(v.getPronunciation())).append(',')
@@ -122,7 +126,9 @@ public class VocabularyServiceImpl implements VocabularyService {
                         .append(escapeCsv(v.getExampleSentence())).append(',')
                         .append(escapeCsv(v.getFixedPhrase())).append(',')
                         .append(escapeCsv(v.getRelatedWords())).append(',')
-                        .append(escapeCsv(v.getNotes()))
+                        .append(escapeCsv(v.getNotes())).append(',')
+                        .append(escapeCsv(v.getType())).append(',')
+                        .append(escapeCsv(v.getLevel()))
                         .append('\n');
             }
             return csv.toString().getBytes(StandardCharsets.UTF_8);
@@ -162,6 +168,8 @@ public class VocabularyServiceImpl implements VocabularyService {
                 vocab.setFixedPhrase(safeGet(fields, 5));
                 vocab.setRelatedWords(safeGet(fields, 6));
                 vocab.setNotes(safeGet(fields, 7));
+                vocab.setType(safeGet(fields, 8));
+                vocab.setLevel(safeGet(fields, 9));
                 result.add(vocab);
             }
         }
@@ -194,6 +202,8 @@ public class VocabularyServiceImpl implements VocabularyService {
                 vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(5)).trim());
                 vocab.setRelatedWords(formatter.formatCellValue(row.getCell(6)).trim());
                 vocab.setNotes(formatter.formatCellValue(row.getCell(7)).trim());
+                vocab.setType(formatter.formatCellValue(row.getCell(8)).trim());
+                vocab.setLevel(formatter.formatCellValue(row.getCell(9)).trim());
                 result.add(vocab);
             }
         }
