@@ -59,7 +59,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             String redirectUrl = UriComponentsBuilder
                     .fromHttpUrl(uiUrl)
                     .path("/auth")
-                    .fragment(buildAuthFragment(jwt, user.getId(), user.getEmail()))
+                    .fragment(buildAuthFragment(jwt, user.getId(), user.getEmail(), user.getFullName()))
                     .build(true)
                     .toUriString();
 
@@ -69,11 +69,12 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         }
     }
 
-    private String buildAuthFragment(String accessToken, Long userId, String email) {
+    private String buildAuthFragment(String accessToken, Long userId, String email, String fullName) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("accessToken", accessToken);
         params.put("userId", userId == null ? "" : String.valueOf(userId));
         params.put("email", email == null ? "" : email);
+        params.put("fullName", fullName == null ? "" : fullName);
 
         StringBuilder fragment = new StringBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
