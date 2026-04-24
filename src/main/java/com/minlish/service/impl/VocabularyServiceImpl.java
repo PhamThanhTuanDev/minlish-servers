@@ -4,6 +4,7 @@ import com.minlish.dto.VocabularyDTO;
 import com.minlish.entity.User;
 import com.minlish.entity.Vocabulary;
 import com.minlish.entity.VocabularySet;
+import com.minlish.repository.StudyHistoryRepository;
 import com.minlish.repository.VocabularyRepository;
 import com.minlish.service.VocabularyService;
 import com.minlish.service.VocabularySetService;
@@ -31,6 +32,7 @@ public class VocabularyServiceImpl implements VocabularyService {
 
     private final VocabularyRepository vocabularyRepository;
     private final VocabularySetService vocabularySetService;
+    private final StudyHistoryRepository studyHistoryRepository;
 
     @Override
     public Vocabulary addVocabulary(Long setId, User user, VocabularyDTO dto) {
@@ -77,12 +79,14 @@ public class VocabularyServiceImpl implements VocabularyService {
     }
 
     @Override
+    @Transactional
     public void deleteVocabulary(Long vocabId, User user) {
         Vocabulary vocab = vocabularyRepository.findById(vocabId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Từ vựng không tồn tại"));
         if (!vocab.getVocabularySet().getUser().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa từ này");
         }
+        studyHistoryRepository.deleteByVocabularyId(vocabId);
         vocabularyRepository.delete(vocab);
     }
 

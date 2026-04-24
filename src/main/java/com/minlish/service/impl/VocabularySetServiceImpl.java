@@ -3,11 +3,14 @@ package com.minlish.service.impl;
 import com.minlish.dto.VocabularySetDTO;
 import com.minlish.entity.User;
 import com.minlish.entity.VocabularySet;
+import com.minlish.repository.StudyHistoryRepository;
+import com.minlish.repository.VocabularyRepository;
 import com.minlish.repository.VocabularySetRepository;
 import com.minlish.service.VocabularySetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -17,6 +20,8 @@ import java.util.List;
 public class VocabularySetServiceImpl implements VocabularySetService {
 
     private final VocabularySetRepository vocabularySetRepository;
+    private final VocabularyRepository vocabularyRepository;
+    private final StudyHistoryRepository studyHistoryRepository;
 
     @Override
     public VocabularySet createSet(User user, VocabularySetDTO dto) {
@@ -53,8 +58,11 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     }
 
     @Override
+    @Transactional
     public void deleteSet(Long setId, User user) {
         VocabularySet set = getSetById(setId, user);
+        studyHistoryRepository.deleteByVocabularyVocabularySetId(setId);
+        vocabularyRepository.deleteByVocabularySetId(setId);
         vocabularySetRepository.delete(set);
     }
 }

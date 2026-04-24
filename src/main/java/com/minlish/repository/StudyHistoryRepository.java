@@ -23,6 +23,10 @@ public interface StudyHistoryRepository extends JpaRepository<StudyHistory, Long
 
     List<StudyHistory> findByUserAndNextReviewDateLessThanEqual(User user, LocalDate date);
 
+    void deleteByVocabularyId(Long vocabularyId);
+
+    void deleteByVocabularyVocabularySetId(Long vocabularySetId);
+
     @Query("SELECT COUNT(DISTINCT s.vocabulary) FROM StudyHistory s WHERE s.user = :user")
     long countDistinctVocabularyByUser(@Param("user") User user);
 

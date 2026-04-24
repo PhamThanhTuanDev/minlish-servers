@@ -16,4 +16,5 @@ public interface VocabularyRepository extends JpaRepository<Vocabulary, Long> {
     List<Vocabulary> findByVocabularySet(VocabularySet vocabularySet);
     List<Vocabulary> findByVocabularySetId(Long vocabularySetId);
     List<Vocabulary> findByIdIn(List<Long> ids);
+    void deleteByVocabularySetId(Long vocabularySetId);
 }
