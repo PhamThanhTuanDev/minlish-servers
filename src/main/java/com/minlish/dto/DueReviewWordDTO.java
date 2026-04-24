@@ -8,6 +8,8 @@ import java.time.LocalDate;
 public class DueReviewWordDTO {
     private Long vocabularyId;
     private String word;
+    private String type;
+    private String level;
     private LocalDate nextReviewDate;
     private LocalDate lastReviewDate;
     private Long overdueDays;

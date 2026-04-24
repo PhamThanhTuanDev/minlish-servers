@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS vocabularies (
     fixed_phrase VARCHAR(500),
     related_words VARCHAR(500),
     notes TEXT,
+    type VARCHAR(50),
+    level VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (vocabulary_set_id) REFERENCES vocabulary_sets(id) ON DELETE CASCADE,

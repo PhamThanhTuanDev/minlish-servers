@@ -302,6 +302,8 @@ public class StatsServiceImpl implements StatsService {
             DueReviewWordDTO wordDto = new DueReviewWordDTO();
             wordDto.setVocabularyId(history.getVocabulary().getId());
             wordDto.setWord(history.getVocabulary().getWord());
+            wordDto.setType(history.getVocabulary().getType());
+            wordDto.setLevel(history.getVocabulary().getLevel());
             wordDto.setNextReviewDate(history.getNextReviewDate());
             wordDto.setLastReviewDate(history.getLastReviewDate());
 
