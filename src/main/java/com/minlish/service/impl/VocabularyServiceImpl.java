@@ -96,14 +96,43 @@ public class VocabularyServiceImpl implements VocabularyService {
         String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
 
         try {
-            List<Vocabulary> vocabularies = filename.endsWith(".xlsx") || filename.endsWith(".xls")
+            // 1. Đọc dữ liệu từ file
+            List<Vocabulary> parsedVocabularies = filename.endsWith(".xlsx") || filename.endsWith(".xls")
                     ? parseExcel(file, set)
                     : parseCsv(file, set);
 
-            if (vocabularies.isEmpty()) {
+            if (parsedVocabularies.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không có dòng dữ liệu hợp lệ");
             }
-            vocabularyRepository.saveAll(vocabularies);
+
+            // 2. Lấy danh sách các từ đã tồn tại trong DB của bộ từ vựng này
+            List<Vocabulary> existingVocabs = vocabularyRepository.findByVocabularySet(set);
+            java.util.Set<String> existingWords = existingVocabs.stream()
+                    .map(v -> v.getWord().toLowerCase().trim())
+                    .collect(java.util.stream.Collectors.toSet());
+
+            // 3. Lọc danh sách từ file (bỏ trùng trong file & bỏ trùng với DB)
+            List<Vocabulary> uniqueVocabulariesToSave = new ArrayList<>();
+            java.util.Set<String> wordsProcessedInFile = new java.util.HashSet<>();
+
+            for (Vocabulary vocab : parsedVocabularies) {
+                String currentWord = vocab.getWord().toLowerCase().trim();
+                
+                // Nếu từ này CHƯA có trong DB VÀ CŨNG CHƯA được đọc trong file này
+                if (!existingWords.contains(currentWord) && !wordsProcessedInFile.contains(currentWord)) {
+                    uniqueVocabulariesToSave.add(vocab);
+                    wordsProcessedInFile.add(currentWord); // Đánh dấu là đã xử lý
+                }
+            }
+
+            // Nếu sau khi lọc mà không còn từ nào để lưu
+            if (uniqueVocabulariesToSave.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tất cả các từ trong file đều đã tồn tại, không có từ mới nào được thêm.");
+            }
+
+            // 4. Lưu danh sách đã được lọc sạch sẽ
+            vocabularyRepository.saveAll(uniqueVocabulariesToSave);
+            
         } catch (Exception e) {
             if (e instanceof ResponseStatusException statusException) {
                 throw statusException;
