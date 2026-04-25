@@ -42,8 +42,14 @@ public class Vocabulary {
 
     private String description;
 
+    @Column(name = "description_vi")
+    private String descriptionVi;
+
     @Column(name = "example_sentence")
     private String exampleSentence;
+
+    @Column(name = "example_vi")
+    private String exampleVi;
 
     @Column(name = "fixed_phrase")
     private String fixedPhrase;
