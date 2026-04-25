@@ -43,9 +43,7 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setPronunciation(dto.getPronunciation());
         vocab.setMeaning(dto.getMeaning());
         vocab.setDescription(dto.getDescription());
-        vocab.setDescriptionVi(dto.getDescriptionVi());
         vocab.setExampleSentence(dto.getExampleSentence());
-        vocab.setExampleVi(dto.getExampleVi());
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
@@ -71,9 +69,7 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setPronunciation(dto.getPronunciation());
         vocab.setMeaning(dto.getMeaning());
         vocab.setDescription(dto.getDescription());
-        vocab.setDescriptionVi(dto.getDescriptionVi());
         vocab.setExampleSentence(dto.getExampleSentence());
-        vocab.setExampleVi(dto.getExampleVi());
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
@@ -125,15 +121,13 @@ public class VocabularyServiceImpl implements VocabularyService {
 
             StringBuilder csv = new StringBuilder();
             csv.append('\uFEFF');
-            csv.append("word,pronunciation,meaning,description,description_vi,example_sentence,example_vi,fixed_phrase,related_words,notes,type,level\n");
+            csv.append("word,pronunciation,meaning,description,example_sentence,fixed_phrase,related_words,notes,type,level\n");
             for (Vocabulary v : words) {
                 csv.append(escapeCsv(v.getWord())).append(',')
                         .append(escapeCsv(v.getPronunciation())).append(',')
                         .append(escapeCsv(v.getMeaning())).append(',')
                         .append(escapeCsv(v.getDescription())).append(',')
-                        .append(escapeCsv(v.getDescriptionVi())).append(',')
                         .append(escapeCsv(v.getExampleSentence())).append(',')
-                        .append(escapeCsv(v.getExampleVi())).append(',')
                         .append(escapeCsv(v.getFixedPhrase())).append(',')
                         .append(escapeCsv(v.getRelatedWords())).append(',')
                         .append(escapeCsv(v.getNotes())).append(',')
@@ -174,23 +168,12 @@ public class VocabularyServiceImpl implements VocabularyService {
                 vocab.setPronunciation(safeGet(fields, 1));
                 vocab.setMeaning(meaning);
                 vocab.setDescription(safeGet(fields, 3));
-                if (fields.length >= 12) {
-                    vocab.setDescriptionVi(safeGet(fields, 4));
-                    vocab.setExampleSentence(safeGet(fields, 5));
-                    vocab.setExampleVi(safeGet(fields, 6));
-                    vocab.setFixedPhrase(safeGet(fields, 7));
-                    vocab.setRelatedWords(safeGet(fields, 8));
-                    vocab.setNotes(safeGet(fields, 9));
-                    vocab.setType(safeGet(fields, 10));
-                    vocab.setLevel(safeGet(fields, 11));
-                } else {
-                    vocab.setExampleSentence(safeGet(fields, 4));
-                    vocab.setFixedPhrase(safeGet(fields, 5));
-                    vocab.setRelatedWords(safeGet(fields, 6));
-                    vocab.setNotes(safeGet(fields, 7));
-                    vocab.setType(safeGet(fields, 8));
-                    vocab.setLevel(safeGet(fields, 9));
-                }
+                vocab.setExampleSentence(safeGet(fields, 4));
+                vocab.setFixedPhrase(safeGet(fields, 5));
+                vocab.setRelatedWords(safeGet(fields, 6));
+                vocab.setNotes(safeGet(fields, 7));
+                vocab.setType(safeGet(fields, 8));
+                vocab.setLevel(safeGet(fields, 9));
                 result.add(vocab);
             }
         }
@@ -202,10 +185,6 @@ public class VocabularyServiceImpl implements VocabularyService {
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             DataFormatter formatter = new DataFormatter();
-            Row header = sheet.getRow(0);
-            String headerCol4 = header == null ? "" : formatter.formatCellValue(header.getCell(4)).trim().toLowerCase();
-            String headerCol6 = header == null ? "" : formatter.formatCellValue(header.getCell(6)).trim().toLowerCase();
-            boolean hasViColumns = "description_vi".equals(headerCol4) || "example_vi".equals(headerCol6);
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) {
@@ -223,23 +202,12 @@ public class VocabularyServiceImpl implements VocabularyService {
                 vocab.setPronunciation(formatter.formatCellValue(row.getCell(1)).trim());
                 vocab.setMeaning(meaning);
                 vocab.setDescription(formatter.formatCellValue(row.getCell(3)).trim());
-                if (hasViColumns) {
-                    vocab.setDescriptionVi(formatter.formatCellValue(row.getCell(4)).trim());
-                    vocab.setExampleSentence(formatter.formatCellValue(row.getCell(5)).trim());
-                    vocab.setExampleVi(formatter.formatCellValue(row.getCell(6)).trim());
-                    vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(7)).trim());
-                    vocab.setRelatedWords(formatter.formatCellValue(row.getCell(8)).trim());
-                    vocab.setNotes(formatter.formatCellValue(row.getCell(9)).trim());
-                    vocab.setType(formatter.formatCellValue(row.getCell(10)).trim());
-                    vocab.setLevel(formatter.formatCellValue(row.getCell(11)).trim());
-                } else {
-                    vocab.setExampleSentence(formatter.formatCellValue(row.getCell(4)).trim());
-                    vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(5)).trim());
-                    vocab.setRelatedWords(formatter.formatCellValue(row.getCell(6)).trim());
-                    vocab.setNotes(formatter.formatCellValue(row.getCell(7)).trim());
-                    vocab.setType(formatter.formatCellValue(row.getCell(8)).trim());
-                    vocab.setLevel(formatter.formatCellValue(row.getCell(9)).trim());
-                }
+                vocab.setExampleSentence(formatter.formatCellValue(row.getCell(4)).trim());
+                vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(5)).trim());
+                vocab.setRelatedWords(formatter.formatCellValue(row.getCell(6)).trim());
+                vocab.setNotes(formatter.formatCellValue(row.getCell(7)).trim());
+                vocab.setType(formatter.formatCellValue(row.getCell(8)).trim());
+                vocab.setLevel(formatter.formatCellValue(row.getCell(9)).trim());
                 result.add(vocab);
             }
         }

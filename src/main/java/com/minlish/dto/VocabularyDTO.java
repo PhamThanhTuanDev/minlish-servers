@@ -19,9 +19,7 @@ public class VocabularyDTO {
     @NotBlank
     private String meaning;
     private String description;
-    private String descriptionVi;
     private String exampleSentence;
-    private String exampleVi;
     private String fixedPhrase;
     private String relatedWords;
     private String notes;
