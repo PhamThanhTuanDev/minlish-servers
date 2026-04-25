@@ -173,75 +173,81 @@ public class VocabularyServiceImpl implements VocabularyService {
     }
 
     private List<Vocabulary> parseCsv(MultipartFile file, VocabularySet set) throws Exception {
-        List<Vocabulary> result = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            boolean firstLine = true;
-            while ((line = reader.readLine()) != null) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
-                String[] fields = line.split(",", -1);
-                if (fields.length < 3) {
-                    continue;
-                }
-                String word = safeGet(fields, 0);
-                String meaning = safeGet(fields, 2);
-                if (word.isBlank() || meaning.isBlank()) {
-                    continue;
-                }
-                Vocabulary vocab = new Vocabulary();
-                vocab.setVocabularySet(set);
-                vocab.setWord(word);
-                vocab.setPronunciation(safeGet(fields, 1));
-                vocab.setMeaning(meaning);
-                vocab.setDescription(safeGet(fields, 3));
-                vocab.setExampleSentence(safeGet(fields, 4));
-                vocab.setFixedPhrase(safeGet(fields, 5));
-                vocab.setRelatedWords(safeGet(fields, 6));
-                vocab.setNotes(safeGet(fields, 7));
-                vocab.setType(safeGet(fields, 8));
-                vocab.setLevel(safeGet(fields, 9));
-                result.add(vocab);
+    List<Vocabulary> result = new ArrayList<>();
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        String line;
+        boolean firstLine = true;
+        while ((line = reader.readLine()) != null) {
+            if (firstLine) {
+                firstLine = false;
+                continue;
             }
+            String[] fields = line.split(",", -1);
+            if (fields.length < 3) {
+                continue;
+            }
+            String word = safeGet(fields, 0);
+            String meaning = safeGet(fields, 2);
+            if (word.isBlank() || meaning.isBlank()) {
+                continue;
+            }
+            Vocabulary vocab = new Vocabulary();
+            vocab.setVocabularySet(set);
+            vocab.setWord(word);                            // Cột 0: word
+            vocab.setPronunciation(safeGet(fields, 1));     // Cột 1: pronunciation
+            vocab.setMeaning(meaning);                      // Cột 2: meaning
+            vocab.setDescription(safeGet(fields, 3));       // Cột 3: description
+            vocab.setDescriptionVi(safeGet(fields, 4));     // Cột 4: description_vi
+            vocab.setExampleSentence(safeGet(fields, 5));   // Cột 5: example_sentence
+            vocab.setExampleVi(safeGet(fields, 6));         // Cột 6: example_vi
+            vocab.setFixedPhrase(safeGet(fields, 7));       // Cột 7: fixed_phrase
+            vocab.setRelatedWords(safeGet(fields, 8));      // Cột 8: related_words
+            vocab.setNotes(safeGet(fields, 9));             // Cột 9: notes
+            vocab.setType(safeGet(fields, 10));             // Cột 10: Type
+            vocab.setLevel(safeGet(fields, 11));            // Cột 11: Level
+            
+            result.add(vocab);
         }
-        return result;
     }
+    return result;
+}
 
     private List<Vocabulary> parseExcel(MultipartFile file, VocabularySet set) throws Exception {
-        List<Vocabulary> result = new ArrayList<>();
-        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            DataFormatter formatter = new DataFormatter();
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) {
-                    continue;
-                }
-                String word = formatter.formatCellValue(row.getCell(0)).trim();
-                String meaning = formatter.formatCellValue(row.getCell(2)).trim();
-                if (word.isBlank() || meaning.isBlank()) {
-                    continue;
-                }
-
-                Vocabulary vocab = new Vocabulary();
-                vocab.setVocabularySet(set);
-                vocab.setWord(word);
-                vocab.setPronunciation(formatter.formatCellValue(row.getCell(1)).trim());
-                vocab.setMeaning(meaning);
-                vocab.setDescription(formatter.formatCellValue(row.getCell(3)).trim());
-                vocab.setExampleSentence(formatter.formatCellValue(row.getCell(4)).trim());
-                vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(5)).trim());
-                vocab.setRelatedWords(formatter.formatCellValue(row.getCell(6)).trim());
-                vocab.setNotes(formatter.formatCellValue(row.getCell(7)).trim());
-                vocab.setType(formatter.formatCellValue(row.getCell(8)).trim());
-                vocab.setLevel(formatter.formatCellValue(row.getCell(9)).trim());
-                result.add(vocab);
+    List<Vocabulary> result = new ArrayList<>();
+    try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+        Sheet sheet = workbook.getSheetAt(0);
+        DataFormatter formatter = new DataFormatter();
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) {
+                continue;
             }
+            String word = formatter.formatCellValue(row.getCell(0)).trim();
+            String meaning = formatter.formatCellValue(row.getCell(2)).trim();
+            if (word.isBlank() || meaning.isBlank()) {
+                continue;
+            }
+
+            Vocabulary vocab = new Vocabulary();
+            vocab.setVocabularySet(set);
+            vocab.setWord(word);                                                               // Cột 0: word
+            vocab.setPronunciation(formatter.formatCellValue(row.getCell(1)).trim());          // Cột 1: pronunciation
+            vocab.setMeaning(meaning);                                                         // Cột 2: meaning
+            vocab.setDescription(formatter.formatCellValue(row.getCell(3)).trim());            // Cột 3: description
+            vocab.setDescriptionVi(formatter.formatCellValue(row.getCell(4)).trim());          // Cột 4: description_vi
+            vocab.setExampleSentence(formatter.formatCellValue(row.getCell(5)).trim());        // Cột 5: example_sentence
+            vocab.setExampleVi(formatter.formatCellValue(row.getCell(6)).trim());              // Cột 6: example_vi
+            vocab.setFixedPhrase(formatter.formatCellValue(row.getCell(7)).trim());            // Cột 7: fixed_phrase
+            vocab.setRelatedWords(formatter.formatCellValue(row.getCell(8)).trim());           // Cột 8: related_words
+            vocab.setNotes(formatter.formatCellValue(row.getCell(9)).trim());                  // Cột 9: notes
+            vocab.setType(formatter.formatCellValue(row.getCell(10)).trim());                  // Cột 10: Type
+            vocab.setLevel(formatter.formatCellValue(row.getCell(11)).trim());                 // Cột 11: Level
+            
+            result.add(vocab);
         }
-        return result;
     }
+    return result;
+}
 
     private String safeGet(String[] fields, int idx) {
         if (idx < 0 || idx >= fields.length) {
