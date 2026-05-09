@@ -58,11 +58,34 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     }
 
     @Override
-    @Transactional
     public void deleteSet(Long setId, User user) {
         VocabularySet set = getSetById(setId, user);
-        studyHistoryRepository.deleteByVocabularyVocabularySetId(setId);
-        vocabularyRepository.deleteByVocabularySetId(setId);
+
+        // Fetch all vocabulary ids for the set
+        List<Long> allIds = vocabularyRepository.findIdsByVocabularySetId(setId);
+        final int CHUNK = 200;
+        for (int i = 0; i < allIds.size(); i += CHUNK) {
+            int toIndex = Math.min(i + CHUNK, allIds.size());
+            List<Long> chunk = allIds.subList(i, toIndex);
+            // Delete study history in a separate transaction per chunk
+            deleteStudyHistoriesChunk(chunk);
+            // Delete vocabularies in a separate transaction per chunk
+            deleteVocabulariesChunk(chunk);
+        }
+
+        // Finally delete the set
         vocabularySetRepository.delete(set);
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    protected void deleteStudyHistoriesChunk(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        studyHistoryRepository.deleteByVocabularyIds(ids);
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    protected void deleteVocabulariesChunk(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return;
+        vocabularyRepository.deleteByIdIn(ids);
     }
 }

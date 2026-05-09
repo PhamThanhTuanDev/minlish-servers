@@ -161,6 +161,21 @@ public class StudyServiceImpl implements StudyService {
     }
 
     @Override
+    public List<Vocabulary> getReviewedWordsToday(User user) {
+        LocalDate today = LocalDate.now();
+        List<StudyHistory> histories = studyHistoryRepository.findByUserAndLastReviewDateOrderByCreatedAtDesc(user, today);
+        return histories.stream().map(StudyHistory::getVocabulary).toList();
+    }
+
+    @Override
+    public List<Vocabulary> getReviewedWordsTodayBySet(User user, Long setId) {
+        LocalDate today = LocalDate.now();
+        List<StudyHistory> histories = studyHistoryRepository
+                .findByUserAndLastReviewDateAndVocabularyVocabularySetIdOrderByCreatedAtDesc(user, today, setId);
+        return histories.stream().map(StudyHistory::getVocabulary).toList();
+    }
+
+    @Override
     public List<Vocabulary> getTodayReviewWordsBySet(User user, Long setId) {
         LocalDate today = LocalDate.now();
         List<StudyHistory> histories = studyHistoryRepository.findByUserAndNextReviewDateLessThanEqual(user, today);

@@ -43,7 +43,9 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setPronunciation(dto.getPronunciation());
         vocab.setMeaning(dto.getMeaning());
         vocab.setDescription(dto.getDescription());
+        vocab.setDescriptionVi(dto.getDescriptionVi());
         vocab.setExampleSentence(dto.getExampleSentence());
+        vocab.setExampleVi(dto.getExampleVi());
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
@@ -69,7 +71,9 @@ public class VocabularyServiceImpl implements VocabularyService {
         vocab.setPronunciation(dto.getPronunciation());
         vocab.setMeaning(dto.getMeaning());
         vocab.setDescription(dto.getDescription());
+        vocab.setDescriptionVi(dto.getDescriptionVi());
         vocab.setExampleSentence(dto.getExampleSentence());
+        vocab.setExampleVi(dto.getExampleVi());
         vocab.setFixedPhrase(dto.getFixedPhrase());
         vocab.setRelatedWords(dto.getRelatedWords());
         vocab.setNotes(dto.getNotes());
@@ -150,13 +154,15 @@ public class VocabularyServiceImpl implements VocabularyService {
 
             StringBuilder csv = new StringBuilder();
             csv.append('\uFEFF');
-            csv.append("word,pronunciation,meaning,description,example_sentence,fixed_phrase,related_words,notes,type,level\n");
+            csv.append("word,pronunciation,meaning,description,description_vi,example_sentence,example_vi,fixed_phrase,related_words,notes,type,level\n");
             for (Vocabulary v : words) {
                 csv.append(escapeCsv(v.getWord())).append(',')
                         .append(escapeCsv(v.getPronunciation())).append(',')
                         .append(escapeCsv(v.getMeaning())).append(',')
                         .append(escapeCsv(v.getDescription())).append(',')
+                        .append(escapeCsv(v.getDescriptionVi())).append(',')
                         .append(escapeCsv(v.getExampleSentence())).append(',')
+                        .append(escapeCsv(v.getExampleVi())).append(',')
                         .append(escapeCsv(v.getFixedPhrase())).append(',')
                         .append(escapeCsv(v.getRelatedWords())).append(',')
                         .append(escapeCsv(v.getNotes())).append(',')
@@ -262,5 +268,60 @@ public class VocabularyServiceImpl implements VocabularyService {
         }
         String escaped = value.replace("\"", "\"\"");
         return "\"" + escaped + "\"";
+    }
+
+    @Override
+    @Transactional
+    public void addWordsToSet(Long targetSetId, List<Long> wordIds, User user) {
+        // Kiểm tra bộ từ đích tồn tại và user có quyền
+        VocabularySet targetSet = vocabularySetService.getSetById(targetSetId, user);
+        
+        if (wordIds == null || wordIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Danh sách ID từ không được trống");
+        }
+
+        // Lấy danh sách từ theo các ID
+        List<Vocabulary> sourcesVocabs = vocabularyRepository.findAllById(wordIds);
+        
+        if (sourcesVocabs.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy từ nào với các ID đã cung cấp");
+        }
+
+        // Lấy danh sách từ đã tồn tại trong bộ đích
+        List<Vocabulary> existingInTarget = vocabularyRepository.findByVocabularySet(targetSet);
+        java.util.Set<String> existingWords = existingInTarget.stream()
+                .map(v -> v.getWord().toLowerCase().trim())
+                .collect(java.util.stream.Collectors.toSet());
+
+        // Copy từ, tránh trùng lặp
+        List<Vocabulary> newVocabs = new ArrayList<>();
+        for (Vocabulary source : sourcesVocabs) {
+            String currentWord = source.getWord().toLowerCase().trim();
+            if (!existingWords.contains(currentWord)) {
+                Vocabulary newVocab = new Vocabulary();
+                newVocab.setVocabularySet(targetSet);
+                newVocab.setWord(source.getWord());
+                newVocab.setPronunciation(source.getPronunciation());
+                newVocab.setMeaning(source.getMeaning());
+                newVocab.setDescription(source.getDescription());
+                newVocab.setDescriptionVi(source.getDescriptionVi());
+                newVocab.setExampleSentence(source.getExampleSentence());
+                newVocab.setExampleVi(source.getExampleVi());
+                newVocab.setFixedPhrase(source.getFixedPhrase());
+                newVocab.setRelatedWords(source.getRelatedWords());
+                newVocab.setNotes(source.getNotes());
+                newVocab.setType(source.getType());
+                newVocab.setLevel(source.getLevel());
+                
+                newVocabs.add(newVocab);
+                existingWords.add(currentWord); // Tránh trùng lặp trong danh sách copy
+            }
+        }
+
+        if (newVocabs.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tất cả các từ đã chọn đều tồn tại trong bộ đích");
+        }
+
+        vocabularyRepository.saveAll(newVocabs);
     }
 }

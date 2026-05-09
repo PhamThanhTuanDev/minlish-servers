@@ -35,4 +35,13 @@ public class StudyController {
         User user = SecurityUtils.getCurrentUser();
         return ResponseEntity.ok(studyService.getTodayReviewWords(user));
     }
+
+    @GetMapping("/reviewed-today")
+    public ResponseEntity<?> getReviewedToday(@RequestParam(required = false) Long setId) {
+        User user = SecurityUtils.getCurrentUser();
+        if (setId != null) {
+            return ResponseEntity.ok(studyService.getReviewedWordsTodayBySet(user, setId));
+        }
+        return ResponseEntity.ok(studyService.getReviewedWordsToday(user));
+    }
 }

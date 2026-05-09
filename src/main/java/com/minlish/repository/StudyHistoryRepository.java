@@ -4,6 +4,7 @@ import com.minlish.entity.StudyHistory;
 import com.minlish.entity.User;
 import com.minlish.entity.Vocabulary;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,6 +23,13 @@ public interface StudyHistoryRepository extends JpaRepository<StudyHistory, Long
     Optional<StudyHistory> findByUserAndVocabulary(User user, Vocabulary vocabulary);
 
     List<StudyHistory> findByUserAndNextReviewDateLessThanEqual(User user, LocalDate date);
+
+        List<StudyHistory> findByUserAndLastReviewDateOrderByCreatedAtDesc(User user, LocalDate date);
+
+        List<StudyHistory> findByUserAndLastReviewDateAndVocabularyVocabularySetIdOrderByCreatedAtDesc(
+            User user,
+            LocalDate date,
+            Long vocabularySetId);
 
     void deleteByVocabularyId(Long vocabularyId);
 
@@ -60,4 +68,8 @@ public interface StudyHistoryRepository extends JpaRepository<StudyHistory, Long
     long countByUserAndNextReviewDateLessThanEqual(User user, LocalDate date);
 
     long countByUserAndNextReviewDateGreaterThan(User user, LocalDate date);
+
+    @Modifying
+    @Query("DELETE FROM StudyHistory s WHERE s.vocabulary.id IN :ids")
+    void deleteByVocabularyIds(@Param("ids") List<Long> ids);
 }

@@ -24,6 +24,10 @@ public interface StudyService {
 
     List<Vocabulary> getTodayReviewWords(User user);
 
+    List<Vocabulary> getReviewedWordsToday(User user);
+
+    List<Vocabulary> getReviewedWordsTodayBySet(User user, Long setId);
+
     List<Vocabulary> getTodayReviewWordsBySet(User user, Long setId);
 
     List<StudyHistory> getUpcomingReviews(User user, int days);

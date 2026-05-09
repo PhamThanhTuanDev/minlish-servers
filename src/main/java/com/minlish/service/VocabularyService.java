@@ -31,4 +31,9 @@ public interface VocabularyService {
     void importCsv(Long setId, User user, MultipartFile file);
 
     byte[] exportCsv(Long setId, User user);
+
+    /**
+     * Bulk add từ từ các ID vào bộ từ mới (copy từ từ bộ cũ)
+     */
+    void addWordsToSet(Long targetSetId, List<Long> wordIds, User user);
 }

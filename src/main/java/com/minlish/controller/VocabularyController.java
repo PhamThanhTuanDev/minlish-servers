@@ -1,6 +1,7 @@
 package com.minlish.controller;
 
 import com.minlish.dto.VocabularyDTO;
+import com.minlish.dto.AddWordsToSetRequest;
 import com.minlish.entity.User;
 import com.minlish.entity.Vocabulary;
 import com.minlish.service.VocabularyService;
@@ -71,5 +72,14 @@ public class VocabularyController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"vocabulary-set-" + setId + ".csv\"")
                 .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
                 .body(content);
+    }
+
+    @PostMapping("/set/{setId}/add-words")
+    public ResponseEntity<?> addWordsToSet(
+            @PathVariable("setId") Long setId,
+            @Valid @RequestBody AddWordsToSetRequest request) {
+        User user = SecurityUtils.getCurrentUser();
+        vocabularyService.addWordsToSet(setId, request.getWordIds(), user);
+        return ResponseEntity.ok().build();
     }
 }
