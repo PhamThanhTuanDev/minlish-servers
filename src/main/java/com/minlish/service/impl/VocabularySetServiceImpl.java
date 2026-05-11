@@ -10,7 +10,8 @@ import com.minlish.service.VocabularySetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class VocabularySetServiceImpl implements VocabularySetService {
     private final VocabularySetRepository vocabularySetRepository;
     private final VocabularyRepository vocabularyRepository;
     private final StudyHistoryRepository studyHistoryRepository;
+    private final PlatformTransactionManager transactionManager;
 
     @Override
     public VocabularySet createSet(User user, VocabularySetDTO dto) {
@@ -64,28 +66,24 @@ public class VocabularySetServiceImpl implements VocabularySetService {
         // Fetch all vocabulary ids for the set
         List<Long> allIds = vocabularyRepository.findIdsByVocabularySetId(setId);
         final int CHUNK = 200;
+
+        TransactionTemplate requiresNewTx = new TransactionTemplate(transactionManager);
+        requiresNewTx.setPropagationBehaviorName("PROPAGATION_REQUIRES_NEW");
+
         for (int i = 0; i < allIds.size(); i += CHUNK) {
             int toIndex = Math.min(i + CHUNK, allIds.size());
             List<Long> chunk = allIds.subList(i, toIndex);
-            // Delete study history in a separate transaction per chunk
-            deleteStudyHistoriesChunk(chunk);
-            // Delete vocabularies in a separate transaction per chunk
-            deleteVocabulariesChunk(chunk);
+            requiresNewTx.executeWithoutResult(status -> {
+                if (chunk == null || chunk.isEmpty()) {
+                    return;
+                }
+                // Xoá lịch sử học trước, sau đó xoá từ để không bị khóa ngoại chặn
+                studyHistoryRepository.deleteByVocabularyIds(chunk);
+                vocabularyRepository.deleteByIdIn(chunk);
+            });
         }
 
         // Finally delete the set
-        vocabularySetRepository.delete(set);
-    }
-
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    protected void deleteStudyHistoriesChunk(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return;
-        studyHistoryRepository.deleteByVocabularyIds(ids);
-    }
-
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    protected void deleteVocabulariesChunk(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return;
-        vocabularyRepository.deleteByIdIn(ids);
+        vocabularySetRepository.deleteById(setId);
     }
 }

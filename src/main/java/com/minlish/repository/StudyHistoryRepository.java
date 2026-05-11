@@ -69,7 +69,7 @@ public interface StudyHistoryRepository extends JpaRepository<StudyHistory, Long
 
     long countByUserAndNextReviewDateGreaterThan(User user, LocalDate date);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM StudyHistory s WHERE s.vocabulary.id IN :ids")
     void deleteByVocabularyIds(@Param("ids") List<Long> ids);
 }

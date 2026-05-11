@@ -24,7 +24,7 @@ public interface VocabularyRepository extends JpaRepository<Vocabulary, Long> {
     @Query("SELECT v.id FROM Vocabulary v WHERE v.vocabularySet.id = :setId")
     List<Long> findIdsByVocabularySetId(@Param("setId") Long setId);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM Vocabulary v WHERE v.id IN :ids")
     void deleteByIdIn(@Param("ids") List<Long> ids);
 }
