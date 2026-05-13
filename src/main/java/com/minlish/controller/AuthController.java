@@ -85,6 +85,9 @@ public class AuthController {
     @Value("${spring.security.oauth2.client.registration.google.client-id:}")
     private String googleClientId;
 
+    @Value("${google.allowed.client.ids}")
+    private List<String> allowedClientIds;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -170,9 +173,8 @@ public class AuthController {
             }
 
             String audience = stringValue(response.get("aud"));
-            if (googleClientId != null && !googleClientId.isBlank() && !googleClientId.equals(audience)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "Google token không dành cho ứng dụng này");
+            if (allowedClientIds != null && !allowedClientIds.isEmpty() && !allowedClientIds.contains(audience)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Google token không dành cho ứng dụng này");
             }
 
             String issuer = stringValue(response.get("iss"));
